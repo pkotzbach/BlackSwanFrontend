@@ -4,6 +4,8 @@
 </svelte:head>
 
 <script>
+	import { onMount } from "svelte";
+	
 	import RadioButtonGroup from "./RadioButtonGroup.svelte";
 	import TitleDivider from "./TitleDivider.svelte";
 	import Slider from '@bulatdashiev/svelte-slider';
@@ -13,7 +15,19 @@
 	import progress_wait from "$lib/images/progress_wait.svg"
 	import progress_running from "$lib/images/progress_running.svg"
 
-	let asset_options = ['BTCUSDT', 'ETHUSDT', '+']
+	function get(url, pass, fail) {
+		fetch(`http://localhost:8000/backtesting/${url}`)
+		.then(response => response.json())
+		.then(data => pass(data))
+		.catch(error => fail(error))
+	}
+	function get_assets() {
+		get("assets",
+		(data) => asset_options = data.concat([{'name': '+'}]),
+		(error) => alert(`Failed getting available assets: ${error}`),
+	) }
+	
+	let asset_options = [{'name': '+'}]
 	let asset_selected = null
 	let interval_options = ['1d', '1h', '1m', '1s']
 	let interval_selected = null
@@ -24,16 +38,22 @@
 	let fees_selected = null
 	let action_probability = [70, 20, 5, 4, 1]
 
+	onMount(async () => get_assets())
+	$: if (asset_selected && asset_selected !== '+') {
+		timeframe_min = asset_options.filter(a => a.name == asset_selected)[0].start_time
+		timeframe_range = [timeframe_min, timeframe_max]
+	}
+
 	let editable = true
 	let execution_stages = ['pass', 'pass', 'fail', 'running', 'waiting', 'waiting', 'waiting']
 
 	
-	// get available assets (check which datasets are downloaded)
 	// get available datasets (check which datasets are created)
 	// start run (on websocket)
 	// show results (probably final message from start run)
 
-	// set all vales if rerun
+	// get all runs from history
+	// set all vales on rerun
 
 	function parseUnixTimestamp(timestamp) {
 		return new Date(timestamp).toLocaleDateString("pl-PL")
