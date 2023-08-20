@@ -8,55 +8,128 @@
 	import TitleDivider from "./TitleDivider.svelte";
 	import Slider from '@bulatdashiev/svelte-slider';
 
-	let timeframe_range = [0, 100]
-	// get available assets
-	// get available datasets
-	// get all values on run
+	import progress_fail from "$lib/images/progress_fail.svg"
+	import progress_pass from "$lib/images/progress_pass.svg"
+	import progress_wait from "$lib/images/progress_wait.svg"
+	import progress_running from "$lib/images/progress_running.svg"
+
+	let asset_options = ['BTCUSDT', 'ETHUSDT', '+']
+	let asset_selected = null
+	let interval_options = ['1d', '1h', '1m', '1s']
+	let interval_selected = null
+	let timeframe_min = 1502942400000
+	let timeframe_max = Date.now()
+	let timeframe_range = [timeframe_min, timeframe_max]
+	let fees_options = ['None', 'Fixed XXX', 'XXX percent of value with fixed minimum XXX']
+	let fees_selected = null
+	let action_probability = [70, 20, 5, 4, 1]
+
+	let editable = true
+	let execution_stages = ['pass', 'pass', 'fail', 'running', 'waiting', 'waiting', 'waiting']
+
+	
+	// get available assets (check which datasets are downloaded)
+	// get available datasets (check which datasets are created)
+	// start run (on websocket)
+	// show results (probably final message from start run)
 
 	// set all vales if rerun
+
+	function parseUnixTimestamp(timestamp) {
+		return new Date(timestamp).toLocaleDateString("pl-PL")
+	}
+
+
+	function run(event) {
+		editable = false
+	}
 </script>
 
 <div class="text-column">
 	<TitleDivider title={"Asset"}/>
-	<RadioButtonGroup options={['BTCUSDT', 'ETHUSDT', '+']}/>
+	{#if editable}
+		<RadioButtonGroup bind:options={asset_options} bind:selected_option={asset_selected}/>
+	{/if}
 
 	<TitleDivider title={"Interval"}/>
-	<RadioButtonGroup options={['1d', '1h', '1m', '1s']}/>
+	{#if editable}
+		<RadioButtonGroup bind:options={interval_options} bind:selected_option={interval_selected}/>
+	{/if}
 
 	<TitleDivider title={"Additional Dataset"}/>
-	<p>Choose additional dataset like tweets, etc</p>
+	{#if editable}
+		<p>TODO</p>
+	{/if}
 
 	<TitleDivider title={"Timeframe"}/>
-	<div class="timeframe">
-		<p>01.05.2023</p>
-		<Slider bind:value={timeframe_range} range on:input={e => console.log(e.detail)}/>
-		<p>31.07.2023</p>
+	{#if editable}
+		<div class="timeframe">
+		<p>{parseUnixTimestamp(timeframe_range[0])}</p>
+		<Slider bind:value={timeframe_range} min={timeframe_min} max={timeframe_max} range on:input={() => {
+			if (timeframe_range[0] > timeframe_range[1]) timeframe_range = [timeframe_range[1], timeframe_range[0]]}
+		}/>
+		<p>{parseUnixTimestamp(timeframe_range[1])}</p>
 	</div>
+	{/if}
 
 	<TitleDivider title={"Fees"}/>
-	<RadioButtonGroup options={['None', 'Fixed XXX', 'XXX percent of value with fixed minimum XXX']}/>
+	{#if editable}
+		<RadioButtonGroup bind:options={fees_options} bind:selected_option={fees_selected}/>
+	{/if}
 
 	<TitleDivider title={"Real Life Limits"}/>
-	<p>Assuming limits of supply and demand, not all actions will be filled in the same timeframe they were placed. Mark what is the probability the action will be filled in:</p>
-	<div class="limits">
-		<li>1st timeframe (instant) <input class="text-input" type="text" placeholder="70"/>%</li>
-		<li>2nd timeframe <input class="text-input" type="text" placeholder="20"/>%</li>
-		<li>3rd timeframe <input class="text-input" type="text" placeholder="5"/>%</li>
-		<li>4th timeframe <input class="text-input" type="text" placeholder="3"/>%</li>
-		<li>5th timeframe <input class="text-input" type="text" placeholder="2"/>%</li>
-	</div>
+	{#if editable}
+		<p>Assuming limits of supply and demand, not all actions will be filled in the same timeframe they were placed. Mark what is the probability the action will be filled in:</p>
+		<div class="limits">
+			<li>1st timeframe (instant) <input class="text-input" type="text" placeholder={action_probability[0].toString()}/>%</li>
+			<li>2nd timeframe <input class="text-input" type="text" placeholder={action_probability[1].toString()}/>%</li>
+			<li>3rd timeframe <input class="text-input" type="text" placeholder={action_probability[2].toString()}/>%</li>
+			<li>4th timeframe <input class="text-input" type="text" placeholder={action_probability[3].toString()}/>%</li>
+			<li>5th timeframe <input class="text-input" type="text" placeholder={action_probability[4].toString()}/>%</li>
+		</div>
+	{/if}
 
 	<TitleDivider title={"Code"}/>
-	<p>Write the code that will take actions.</p> 
-	<p>Here are the available variables:
-        {#each ['VAR1', 'VAR2'] as v}
-			<span class="var">{v}</span><span>, </span>
-		{/each}
-	</p> 
-	<textarea rows=15></textarea>
+	{#if editable}
+		<p>Write the code that will take actions.</p> 
+		<p>Here are the available variables:
+			{#each ['VAR1', 'VAR2'] as v}
+				<span class="var">{v}</span><span>, </span>
+			{/each}
+		</p> 
+		<textarea rows=15></textarea>
+	{/if}
 
 	<TitleDivider title={"Run"}/>
-	<button id="run">RUN</button>
+	{#if editable}
+		<button id="run" on:click={run}>RUN</button>
+	{/if}
+
+	{#if !editable}
+	{#each execution_stages as stage, i}
+		<div class="progress-row">
+			{#if stage == 'pass'}
+			<img src={progress_pass}/>
+			{:else if stage == 'fail'}
+			<img src={progress_fail}/>
+			{:else if stage == 'running'}
+			<img src={progress_running} class="spin"/>
+			{:else if stage == 'waiting'}
+			<img src={progress_wait}/>
+			{/if}
+			<p>
+				{#if i == 0}
+				Downloading
+				{:else if i == execution_stages.length - 1}
+				Analyzing results
+				{:else}
+				Running test {i}
+				{/if}
+			</p>
+		</div>
+		{/each}
+	{/if}
+
 </div>
 
 <style>
@@ -107,5 +180,22 @@
 		border: none;
 		padding: 1rem 3rem;
 		cursor: pointer;
+	}
+
+	.progress-row {
+		display: flex;
+		padding: 0.2rem;
+	}
+	
+	.progress-row img {
+		width: 1.5rem;
+	}
+
+	.progress-row img.spin {
+		animation: rotation 3s infinite linear;
+	}
+	@keyframes rotation {
+		from { transform: rotate(359deg); }
+		to { transform: rotate(0deg); }
 	}
 </style>

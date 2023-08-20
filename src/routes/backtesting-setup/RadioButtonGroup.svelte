@@ -1,9 +1,20 @@
 <script>
     export let options;
-    export let selectedOption = null;
+    export let selected_option = null;
   
+    function handleAddingNewAsset() {
+        const newAsset = window.prompt('Add new asset')
+        if (!newAsset) return
+        options = options.slice(0, -1).concat([newAsset, '+'])
+        selected_option = newAsset
+    }
+
     function handleOptionChange(event) {
-        selectedOption = event.target.value;
+        if (event.target.value == '+') {
+            handleAddingNewAsset()
+        } else {
+            selected_option = event.target.value;
+        }
     }
 
     function last(a, i){ return i == a.length - 1 }
@@ -12,8 +23,8 @@
 
 <div class="radio-group">
 {#each options as option}
-    <label class="radio-item {selectedOption === option && 'selected'}">
-    <input type="radio" name="radio-group" value={option} class="radio-button" bind:group={selectedOption} on:change={handleOptionChange}/>
+    <label class="radio-item {selected_option === option && 'selected'}">
+    <input type="radio" name="radio-group" value={option} class="radio-button" bind:group={selected_option} on:change={handleOptionChange}/>
     {#if option.includes('XXX')}
         {#each option.split('XXX') as part, i}
             {part}
