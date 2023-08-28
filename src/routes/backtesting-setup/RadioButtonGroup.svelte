@@ -1,4 +1,5 @@
 <script>
+    export let id = null;
     export let options = [];
     export let selected_option = null;
   
@@ -34,7 +35,7 @@
 
 </script>
 
-<div class="radio-group">
+<div class="radio-group" id={id}>
 {#each options.map(o => o.name ? o.name : o) as option}
     <label class="radio-item {selected_option === option && 'selected'}">
     <input type="radio" name="radio-group" value={option} class="radio-button" bind:group={selected_option} on:change={handleOptionChange}/>
